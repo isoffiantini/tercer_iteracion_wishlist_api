@@ -1,0 +1,1343 @@
+openapi: 3.0.3
+info:
+  title: Zara Wishlist API
+  description: API para gestión de múltiples wishlists - MVP
+  version: 1.0.0
+  contact:
+    name: Zara Ecommerce Team
+    email: api@zara.com
+
+servers:
+  - url: https://api.zara.com/v1
+    description: Production server
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  
+  schemas:
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        details:
+          type: string
+
+    Product:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "prod_123456"
+        name:
+          type: string
+          example: "VESTIDO MIDI SATINADO"
+        price:
+          type: object
+          properties:
+            current:
+              type: number
+              format: float
+              example: 29.95
+            original:
+              type: number
+              format: float
+              example: 39.95
+            currency:
+              type: string
+              example: "EUR"
+        images:
+          type: array
+          items:
+            type: string
+            format: uri
+          example: ["https://image1.jpg", "https://image2.jpg"]
+        available:
+          type: boolean
+          example: true
+
+    WishlistItem:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "wish_item_789"
+        product:
+          $ref: '#/components/schemas/Product'
+        quantity:
+          type: integer
+          minimum: 1
+          maximum: 10
+          example: 1
+        size:
+          type: string
+          example: "M"
+        color:
+          type: string
+          example: "NEGRO"
+        added_at:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:30:00Z"
+        notes:
+          type: string
+          example: "Para cumpleaños de María"
+          maxLength: 200
+
+    Wishlist:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "wish_123"
+        user_id:
+          type: string
+          example: "user_456"
+        name:
+          type: string
+          example: "Lista de Boda"
+          maxLength: 100
+        description:
+          type: string
+          example: "Regalos para nuestra boda en junio"
+          maxLength: 500
+        is_default:
+          type: boolean
+          example: false
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/WishlistItem'
+        items_count:
+          type: integer
+          example: 5
+        max_items:
+          type: integer
+          example: 50
+        created_at:
+          type: string
+          format: date-time
+          example: "2024-01-10T15:20:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:30:00Z"
+
+    WishlistList:
+      type: object
+      properties:
+        wishlists:
+          type: array
+          items:
+            $ref: '#/components/schemas/Wishlist'
+        total_count:
+          type: integer
+          example: 3
+
+    CreateWishlistRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          example: "Mi Lista de Boda"
+        description:
+          type: string
+          maxLength: 500
+          example: "Regalos para nuestra boda"
+        is_default:
+          type: boolean
+          example: false
+
+    UpdateWishlistRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          example: "Lista de Boda Actualizada"
+        description:
+          type: string
+          maxLength: 500
+          example: "Regalos actualizados para la boda"
+        is_default:
+          type: boolean
+          example: true
+
+    AddItemToWishlistRequest:
+      type: object
+      required:
+        - product_id
+      properties:
+        product_id:
+          type: string
+          example: "prod_123456"
+        quantity:
+          type: integer
+          minimum: 1
+          maximum: 10
+          default: 1
+          example: 2
+        size:
+          type: string
+          example: "M"
+        color:
+          type: string
+          example: "NEGRO"
+        notes:
+          type: string
+          maxLength: 200
+          example: "Talla M en negro"
+
+    UpdateWishlistItemRequest:
+      type: object
+      properties:
+        quantity:
+          type: integer
+          minimum: 1
+          maximum: 10
+          example: 3
+        size:
+          type: string
+          example: "L"
+        color:
+          type: string
+          example: "AZUL"
+        notes:
+          type: string
+          maxLength: 200
+          example: "Cambiar a talla L"
+
+    ExportToCartRequest:
+      type: object
+      properties:
+        item_ids:
+          type: array
+          items:
+            type: string
+          example: ["item_123", "item_456"]
+        export_all:
+          type: boolean
+          example: true
+
+    ExportToCartResponse:
+      type: object
+      properties:
+        exported_items:
+          type: integer
+          example: 5
+        failed_items:
+          type: integer
+          example: 0
+        cart_items:
+          type: array
+          items:
+            type: string
+          example: ["cart_123", "cart_456"]
+
+    ApiResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+        message:
+          type: string
+
+    # ESQUEMAS PARA SHARING UNIFICADO
+    ShareSettings:
+      type: object
+      properties:
+        mode:
+          type: string
+          enum: [simple, collaborative]
+          default: simple
+          example: collaborative
+        expiration_days:
+          type: integer
+          minimum: 1
+          maximum: 90
+          example: 30
+        max_views:
+          type: integer
+          example: 100
+        allow_comments:
+          type: boolean
+          example: true
+        show_prices:
+          type: boolean
+          example: true
+        show_out_of_stock:
+          type: boolean
+          example: true
+        created_at:
+          type: string
+          format: date-time
+        is_active:
+          type: boolean
+          example: true
+
+    ShareWishlistRequest:
+      type: object
+      properties:
+        mode:
+          type: string
+          enum: [simple, collaborative]
+          default: simple
+        expiration_days:
+          type: integer
+          minimum: 1
+          maximum: 90
+          default: 30
+        max_views:
+          type: integer
+        allow_comments:
+          type: boolean
+          default: true
+        show_prices:
+          type: boolean
+          default: true
+        show_out_of_stock:
+          type: boolean
+          default: true
+
+    UnifiedShareWishlistResponse:
+      type: object
+      properties:
+        share_url:
+          type: string
+          format: uri
+          example: "https://zara.com/wishlist/share/abc123xyz"
+        share_token:
+          type: string
+          example: "abc123xyz"
+        settings:
+          $ref: '#/components/schemas/ShareSettings'
+        message:
+          type: string
+          example: "Wishlist compartida exitosamente"
+
+    SharedWishlistView:
+      type: object
+      properties:
+        wishlist:
+          $ref: '#/components/schemas/Wishlist'
+        share_type:
+          type: string
+          example: "shared"
+        settings:
+          $ref: '#/components/schemas/ShareSettings'
+        owner_info:
+          type: object
+          properties:
+            name:
+              type: string
+              example: "María"
+            initial:
+              type: string
+              example: "M"
+        remaining_views:
+          type: integer
+          example: 85
+        expires_in_days:
+          type: integer
+          example: 15
+
+    Comment:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "comment_123"
+        user_initial:
+          type: string
+          example: "A"
+        user_name:
+          type: string
+          example: "Ana"
+        content:
+          type: string
+          example: "¡Me encanta este vestido!"
+        created_at:
+          type: string
+          format: date-time
+          example: "2024-01-20T10:30:00Z"
+
+    AddCommentRequest:
+      type: object
+      required:
+        - content
+      properties:
+        content:
+          type: string
+          maxLength: 500
+          example: "¡Me encanta este producto!"
+
+    CommentList:
+      type: object
+      properties:
+        comments:
+          type: array
+          items:
+            $ref: '#/components/schemas/Comment'
+        total_count:
+          type: integer
+          example: 5
+
+    ShareStats:
+      type: object
+      properties:
+        total_views:
+          type: integer
+          example: 42
+        total_shares:
+          type: integer
+          example: 8
+        total_comments:
+          type: integer
+          example: 5
+        last_accessed:
+          type: string
+          format: date-time
+          example: "2024-01-20T15:30:00Z"
+
+    # ESQUEMAS PARA NOTIFICACIONES DE PRECIO/STOCK
+    NotificationPreferences:
+      type: object
+      properties:
+        price_alerts:
+          type: boolean
+          example: true
+        stock_alerts:
+          type: boolean
+          example: true
+        push_enabled:
+          type: boolean
+          example: true
+        last_updated:
+          type: string
+          format: date-time
+          example: "2024-01-25T14:30:00Z"
+
+    UpdateNotificationPreferencesRequest:
+      type: object
+      properties:
+        price_alerts:
+          type: boolean
+          example: true
+        stock_alerts:
+          type: boolean
+          example: false
+        push_enabled:
+          type: boolean
+          example: true
+
+    PriceAlert:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "alert_123"
+        product_id:
+          type: string
+          example: "prod_123456"
+        product_name:
+          type: string
+          example: "VESTIDO MIDI SATINADO"
+        current_price:
+          type: number
+          format: float
+          example: 25.95
+        previous_price:
+          type: number
+          format: float
+          example: 29.95
+        currency:
+          type: string
+          example: "EUR"
+        price_drop_percent:
+          type: number
+          format: float
+          example: 12.5
+        created_at:
+          type: string
+          format: date-time
+          example: "2024-01-25T10:15:00Z"
+        is_read:
+          type: boolean
+          example: false
+
+    StockAlert:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "stock_alert_456"
+        product_id:
+          type: string
+          example: "prod_123456"
+        product_name:
+          type: string
+          example: "VESTIDO MIDI SATINADO"
+        is_back_in_stock:
+          type: boolean
+          example: true
+        size:
+          type: string
+          example: "M"
+        color:
+          type: string
+          example: "NEGRO"
+        created_at:
+          type: string
+          format: date-time
+          example: "2024-01-25T11:30:00Z"
+        is_read:
+          type: boolean
+          example: false
+
+    AlertList:
+      type: object
+      properties:
+        price_alerts:
+          type: array
+          items:
+            $ref: '#/components/schemas/PriceAlert'
+        stock_alerts:
+          type: array
+          items:
+            $ref: '#/components/schemas/StockAlert'
+        total_unread:
+          type: integer
+          example: 3
+
+    MonitoringStatus:
+      type: object
+      properties:
+        product_id:
+          type: string
+          example: "prod_123456"
+        is_monitored:
+          type: boolean
+          example: true
+        monitoring_types:
+          type: array
+          items:
+            type: string
+            enum: [price, stock]
+          example: ["price", "stock"]
+        last_checked:
+          type: string
+          format: date-time
+          example: "2024-01-25T12:00:00Z"
+
+    ProductMonitoringRequest:
+      type: object
+      required:
+        - product_id
+      properties:
+        product_id:
+          type: string
+          example: "prod_123456"
+        monitor_price:
+          type: boolean
+          default: true
+        monitor_stock:
+          type: boolean
+          default: true
+
+    ProductMonitoringResponse:
+      type: object
+      properties:
+        product_id:
+          type: string
+          example: "prod_123456"
+        monitoring_enabled:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Monitoreo activado para este producto"
+
+paths:
+  # =============================================
+  # WISHLISTS MANAGEMENT - MÚLTIPLES LISTAS
+  # =============================================
+  /wishlists:
+    get:
+      summary: Obtener todas las wishlists del usuario
+      description: Retorna todas las wishlists del usuario autenticado
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Wishlists obtenidas exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WishlistList'
+        '404':
+          description: El usuario no tiene wishlists
+
+    post:
+      summary: Crear nueva wishlist
+      description: Crea una nueva wishlist para el usuario
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWishlistRequest'
+      responses:
+        '201':
+          description: Wishlist creada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              example:
+                success: true
+                message: "Wishlist creada exitosamente"
+                data:
+                  wishlist_id: "wish_123"
+        '400':
+          description: Solicitud inválida
+        '409':
+          description: Límite de wishlists alcanzado
+
+  /wishlists/{wishlist_id}:
+    get:
+      summary: Obtener wishlist específica
+      description: Retorna una wishlist específica con todos sus items
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: wishlist_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Wishlist obtenida exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Wishlist'
+        '404':
+          description: Wishlist no encontrada
+
+    put:
+      summary: Actualizar wishlist
+      description: Actualiza el nombre, descripción y configuración de una wishlist
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: wishlist_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateWishlistRequest'
+      responses:
+        '200':
+          description: Wishlist actualizada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+
+    delete:
+      summary: Eliminar wishlist
+      description: Elimina permanentemente una wishlist y todos sus items
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: wishlist_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Wishlist eliminada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              example:
+                success: true
+                message: "Wishlist eliminada con 5 productos"
+
+  # =============================================
+  # WISHLIST ITEMS MANAGEMENT
+  # =============================================
+  /wishlists/{wishlist_id}/items:
+    post:
+      summary: Añadir item a wishlist específica
+      description: Añade un producto a una wishlist específica (máximo 50 items)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: wishlist_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddItemToWishlistRequest'
+      responses:
+        '201':
+          description: Item añadido exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              example:
+                success: true
+                message: "Producto añadido a la wishlist"
+                data:
+                  item_id: "item_123"
+                  current_count: 15
+        '400':
+          description: Límite de 50 items alcanzado
+        '404':
+          description: Wishlist no encontrada
+        '409':
+          description: Producto ya existe en la wishlist
+
+    get:
+      summary: Obtener items de wishlist específica
+      description: Retorna todos los items de una wishlist específica
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: wishlist_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Items obtenidos exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/WishlistItem'
+                  total_count:
+                    type: integer
+        '404':
+          description: Wishlist no encontrada
+
+    delete:
+      summary: Eliminar todos los items de la wishlist
+      description: Vacía completamente una wishlist pero la mantiene activa
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: wishlist_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Todos los items eliminados exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              example:
+                success: true
+                message: "15 productos eliminados de la wishlist"
+
+  /wishlists/{wishlist_id}/items/{item_id}:
+    put:
+      summary: Actualizar item de wishlist específica
+      description: Modifica cantidad, talla, color o notas de un item específico
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: wishlist_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: item_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateWishlistItemRequest'
+      responses:
+        '200':
+          description: Item actualizado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '404':
+          description: Item no encontrado en la wishlist
+
+    delete:
+      summary: Eliminar item específico de wishlist
+      description: Elimina un producto específico de una wishlist
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: wishlist_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: item_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Item eliminado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+
+  # =============================================
+  # EXPORT TO CART
+  # =============================================
+  /wishlists/{wishlist_id}/export-to-cart:
+    post:
+      summary: Exportar items al carrito desde wishlist específica
+      description: Exporta uno, varios o todos los items de una wishlist al carrito
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: wishlist_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExportToCartRequest'
+      responses:
+        '200':
+          description: Items exportados al carrito exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExportToCartResponse'
+        '404':
+          description: Wishlist no encontrada
+
+  # =============================================
+  # WISHLIST SHARING UNIFICADO
+  # =============================================
+  /wishlists/{wishlist_id}/share:
+    post:
+      summary: Compartir wishlist
+      description: Crea un enlace para compartir la wishlist con configuraciones flexibles (simple o colaborativo)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: wishlist_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ShareWishlistRequest'
+      responses:
+        '201':
+          description: Wishlist compartida exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnifiedShareWishlistResponse'
+        '400':
+          description: Configuración inválida
+        '404':
+          description: Wishlist no encontrada
+
+    get:
+      summary: Obtener configuración de sharing
+      description: Retorna la configuración actual del sharing de la wishlist
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: wishlist_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Configuración obtenida exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShareSettings'
+        '404':
+          description: Wishlist no encontrada o no compartida
+
+    put:
+      summary: Actualizar configuración de sharing
+      description: Actualiza la configuración del sharing de la wishlist
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: wishlist_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ShareWishlistRequest'
+      responses:
+        '200':
+          description: Configuración actualizada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '404':
+          description: Wishlist no encontrada
+
+    delete:
+      summary: Desactivar sharing
+      description: Desactiva el sharing de la wishlist
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: wishlist_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Sharing desactivado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '404':
+          description: Wishlist no encontrada
+
+  /wishlists/{wishlist_id}/share/stats:
+    get:
+      summary: Obtener estadísticas de sharing
+      description: Retorna las estadísticas de uso del enlace compartido
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: wishlist_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Estadísticas obtenidas exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShareStats'
+        '404':
+          description: Wishlist no encontrada o no compartida
+
+  /wishlists/shared/{share_token}:
+    get:
+      summary: Acceder a wishlist compartida
+      description: Accede a una wishlist compartida usando el token
+      parameters:
+        - name: share_token
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Wishlist compartida obtenida exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SharedWishlistView'
+        '404':
+          description: Enlace no encontrado o expirado
+        '410':
+          description: Límite de visualizaciones alcanzado
+
+  /wishlists/shared/{share_token}/comments:
+    get:
+      summary: Obtener comentarios
+      description: Retorna los comentarios de la wishlist compartida
+      parameters:
+        - name: share_token
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Comentarios obtenidos exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentList'
+        '404':
+          description: Enlace no encontrado
+
+    post:
+      summary: Añadir comentario
+      description: Añade un comentario a la wishlist compartida (si está permitido)
+      parameters:
+        - name: share_token
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddCommentRequest'
+      responses:
+        '201':
+          description: Comentario añadido exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '400':
+          description: Los comentarios no están permitidos en esta wishlist
+        '404':
+          description: Enlace no encontrado
+
+  # =============================================
+  # NOTIFICACIONES DE PRECIO/STOCK
+  # =============================================
+  
+  # GESTIÓN DE PREFERENCIAS DE NOTIFICACIONES
+  /notifications/preferences:
+    get:
+      summary: Obtener preferencias de notificaciones
+      description: Retorna las preferencias de notificaciones del usuario
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Preferencias obtenidas exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationPreferences'
+        '404':
+          description: Preferencias no encontradas
+
+    put:
+      summary: Actualizar preferencias de notificaciones
+      description: Actualiza las preferencias de notificaciones del usuario
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateNotificationPreferencesRequest'
+      responses:
+        '200':
+          description: Preferencias actualizadas exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              example:
+                success: true
+                message: "Preferencias de notificaciones actualizadas"
+
+  # GESTIÓN DE ALERTAS
+  /notifications/alerts:
+    get:
+      summary: Obtener alertas del usuario
+      description: Retorna todas las alertas de precio y stock del usuario
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: unread_only
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: false
+          description: Filtrar solo alertas no leídas
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 50
+            maximum: 100
+          description: Límite de alertas a retornar
+      responses:
+        '200':
+          description: Alertas obtenidas exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlertList'
+        '404':
+          description: No se encontraron alertas
+
+    delete:
+      summary: Limpiar alertas leídas
+      description: Elimina todas las alertas marcadas como leídas
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Alertas limpiadas exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              example:
+                success: true
+                message: "15 alertas leídas eliminadas"
+
+  # MARCADO DE ALERTAS COMO LEÍDAS
+  /notifications/alerts/{alert_id}/read:
+    put:
+      summary: Marcar alerta como leída
+      description: Marca una alerta específica como leída
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: alert_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Alerta marcada como leída exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '404':
+          description: Alerta no encontrada
+
+  # MONITOREO DE PRODUCTOS
+  /products/{product_id}/monitoring:
+    get:
+      summary: Obtener estado de monitoreo
+      description: Retorna el estado actual del monitoreo para un producto específico
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: product_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Estado de monitoreo obtenido exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MonitoringStatus'
+        '404':
+          description: Producto no encontrado o no monitoreado
+
+    post:
+      summary: Activar monitoreo de producto
+      description: Activa el monitoreo de precio y/o stock para un producto específico
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: product_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductMonitoringRequest'
+      responses:
+        '201':
+          description: Monitoreo activado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductMonitoringResponse'
+        '400':
+          description: Solicitud inválida
+        '409':
+          description: El producto ya está siendo monitoreado
+
+    delete:
+      summary: Desactivar monitoreo de producto
+      description: Desactiva el monitoreo para un producto específico
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: product_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Monitoreo desactivado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              example:
+                success: true
+                message: "Monitoreo desactivado para este producto"
+
+  # MONITOREO MASIVO POR WISHLIST
+  /wishlists/{wishlist_id}/monitoring:
+    get:
+      summary: Obtener estado de monitoreo de la wishlist
+      description: Retorna el estado de monitoreo para todos los productos en una wishlist específica
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: wishlist_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Estado de monitoreo obtenido exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  wishlist_id:
+                    type: string
+                  monitored_products:
+                    type: integer
+                  total_products:
+                    type: integer
+                  monitoring_status:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MonitoringStatus'
+        '404':
+          description: Wishlist no encontrada
+
+    post:
+      summary: Activar monitoreo para toda la wishlist
+      description: Activa el monitoreo de precio y stock para todos los productos de una wishlist
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: wishlist_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                monitor_price:
+                  type: boolean
+                  default: true
+                monitor_stock:
+                  type: boolean
+                  default: true
+      responses:
+        '200':
+          description: Monitoreo activado para la wishlist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              example:
+                success: true
+                message: "Monitoreo activado para 8 productos de la wishlist"
+                data:
+                  activated_count: 8
+                  failed_count: 0
+
+    delete:
+      summary: Desactivar monitoreo para toda la wishlist
+      description: Desactiva el monitoreo para todos los productos de una wishlist
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: wishlist_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Monitoreo desactivado para la wishlist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              example:
+                success: true
+                message: "Monitoreo desactivado para 5 productos"
